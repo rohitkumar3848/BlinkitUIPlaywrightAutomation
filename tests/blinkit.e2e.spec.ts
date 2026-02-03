@@ -8,8 +8,19 @@ import SearchPage from '../src/pages/SearchPage';
 import ProductPage from '../src/pages/ProductPage';
 import CartPage from '../src/pages/CartPage';
 import PaymentPage from '../src/pages/PaymentPage';
+import { takeScreenshot } from '../src/utils/Screenshot';
 
-test('Blinkit Order Flow', async ({ page }) => {
+
+test.afterEach(async ({ page }, testInfo) => {
+  if (testInfo.status !== testInfo.expectedStatus) {
+    await page.screenshot({
+      path: `screenshots/FAILED-${testInfo.title}.png`,
+      fullPage: true,
+    });
+  }
+});
+
+test('Blinkit Order Flow', async ({ page },testInfo) => {
 
   await page.goto(config.url);
 
@@ -27,43 +38,37 @@ test('Blinkit Order Flow', async ({ page }) => {
   // 2. Login
   await home.clickLogin();
   await login.login(config.mobile);
-  await login.waitForManualOtp(25);
+  await login.waitForManualOtp(config.otpTime);
+
+  //Take ScreenShot of HomePage
+  await takeScreenshot(page, testInfo, config.homePage);
 
   // 3. Search product
-  await search.searchProduct('Kurkure');
+  await search.searchProduct(config.searchProduct);
 
-  console.log("The item is searched Milk");
 
   // 4. Select product from list 'Amul Gold Milk'
-  await search.selectProductByName("Kurkure Masala Munch Crisps");
+  await search.selectProductByName(config.selectProduct);
 
-  console.log("Searching is done");
-
-  console.log("add to cart start");
 
   // 5. Add to cart
   await product.addToCart();
 
-  console.log("add to cart end");
-  //await page.pause();
 
   // 6. Open cart
   await product.openCart();
 
-  console.log("cart is openend");
 
-  console.log("Cart is proceed click start");
   // 7. Proceed to pay
   await cart.proceedToPay();
 
-  console.log("Cart is proceed click end");
+  //Take ScreenShot of Payment Page
+  await takeScreenshot(page, testInfo, config.lastpage);
 
-  console.log("payment page is start");
   // 8. Verify payment page
   const isOpened = await payment.isPaymentPageOpened();
   expect(isOpened).toBeTruthy();
 
-  console.log("Payment page is end")
 });
 
 
@@ -71,7 +76,6 @@ test('Blinkit Order Flow', async ({ page }) => {
 
 // | Namkeen  | Haldiram's Nagpur Sev Bhujia  |
 //      | Bread    | English Oven Milk Bread |
-
 //      | Biscuits | Parle-G Glucose Biscuit |
 //       | Kurkure  | Kurkure Masala Munch Crisps |
 //     | Milk     | Amul Gold Milk |
